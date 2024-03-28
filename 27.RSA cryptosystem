@@ -1,6 +1,7 @@
-include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <string.h>
 
 // Function to calculate GCD (Greatest Common Divisor)
 int gcd(int a, int b) {
@@ -11,33 +12,6 @@ int gcd(int a, int b) {
         a = temp;
     }
     return a;
-}
-
-// Function to calculate modular inverse using Extended Euclidean Algorithm
-int mod_inverse(int a, int m) {
-    int m0 = m, t, q;
-    int x0 = 0, x1 = 1;
-
-    if (m == 1)
-        return 0;
-
-    // Apply extended Euclid Algorithm
-    while (a > 1) {
-        q = a / m;
-        t = m;
-
-        m = a % m, a = t;
-        t = x0;
-
-        x0 = x1 - q * x0;
-        x1 = t;
-    }
-
-    // Make x1 positive
-    if (x1 < 0)
-        x1 += m0;
-
-    return x1;
 }
 
 // Function to perform RSA encryption
@@ -55,44 +29,42 @@ int rsa_decrypt(int ciphertext, int d, int n) {
 }
 
 int main() {
-    int p, q, n, phi, e, d; // RSA parameters
-    int plaintext, ciphertext, decryptedtext;
+    // Bob's RSA parameters
+    int p = 61; // prime number
+    int q = 53; // prime number
+    int n = p * q; // modulus
+    int phi = (p - 1) * (q - 1); // Euler's totient function
+    int e = 65537; // public exponent (commonly used)
+    int d = 37231; // private exponent
 
-    // Bob's initial key generation
-    p = 61; // prime number
-    q = 53; // prime number
-    n = p * q; // modulus
-    phi = (p - 1) * (q - 1); // Euler's totient function
-    e = 17; // public exponent
-    d = mod_inverse(e, phi); // private exponent
+    // Alice's message (plaintext)
+    char message[] = "HELLO";
 
-    printf("Bob's original public key (e, n): (%d, %d)\n", e, n);
-    printf("Bob's original private key: %d\n", d);
+    // Encrypt each character of the message separately using RSA
+    printf("Encrypted message: ");
+    for (int i = 0; i < strlen(message); i++) {
+        if (message[i] >= 'A' && message[i] <= 'Z') {
+            int plaintext = message[i] - 'A'; // Convert character to number (A=0, B=1, ..., Z=25)
+            int ciphertext = rsa_encrypt(plaintext, e, n);
+            printf("%d ", ciphertext);
+        } else {
+            printf("%c ", message[i]); // If character is not in A-Z range, print as is
+        }
+    }
+    printf("\n");
 
-    // Example plaintext block
-    plaintext = 1234;
-
-    // Encrypt plaintext using Bob's public key
-    ciphertext = rsa_encrypt(plaintext, e, n);
-    printf("Ciphertext: %d\n", ciphertext);
-
-    // Decrypt ciphertext using Bob's private key
-    decryptedtext = rsa_decrypt(ciphertext, d, n);
-    printf("Decryptedtext: %d\n", decryptedtext);
-
-    // Suppose Bob's private key is leaked
-    printf("\nBob's private key has been leaked!\n");
-
-    // Bob decides to generate a new key pair without changing the modulus
-    e = 31; // new public exponent
-    d = mod_inverse(e, phi); // new private exponent
-
-    printf("Bob's new public key (e, n): (%d, %d)\n", e, n);
-    printf("Bob's new private key: %d\n", d);
-
-    // Attempt to decrypt ciphertext using Bob's new private key
-    decryptedtext = rsa_decrypt(ciphertext, d, n);
-    printf("Decryptedtext using new private key: %d\n", decryptedtext);
+    // Decrypt each character of the message separately using RSA
+    printf("Decrypted message: ");
+    for (int i = 0; i < strlen(message); i++) {
+        if (message[i] >= 'A' && message[i] <= 'Z') {
+            int ciphertext = message[i] - 'A'; // Convert character to number (A=0, B=1, ..., Z=25)
+            int plaintext = rsa_decrypt(ciphertext, d, n);
+            printf("%c", plaintext + 'A'); // Convert number back to character
+        } else {
+            printf("%c", message[i]); // If character is not in A-Z range, print as is
+        }
+    }
+    printf("\n");
 
     return 0;
 }
